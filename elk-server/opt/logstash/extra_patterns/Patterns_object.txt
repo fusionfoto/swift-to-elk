@@ -1,0 +1,144 @@
+################################
+# Object Expirer patterns
+################################
+#
+# EXAMPLE LOG ENTRIES
+#   #############
+# OBJ_EXP_START Oct 15 13:13:00 localhost.localdomain object-expirer: Pass beginning; 0 possible containers; 0 possible objects
+# OBJ_EXP_FINISH Oct 15 13:13:00 localhost.localdomain object-expirer: Pass completed in 0s; 0 objects expired
+#   #############
+
+  if [type] == "swift" {
+    grok {
+      add_tag => ["swift", "object", "expirer", "OBJ_EXP_START"]
+      remove_tag => ["_grokparsefailure"]
+      patterns_dir => ["/opt/logstash/patterns", "/opt/logstash/extra_patterns"]
+      match => { "message" => "%{SYSLOGTIMESTAMP} %{HOSTNAME} %{WORD:ServiceType}-%{WORD:JobType}: Pass beginning; %{BASE10NUM:PossibleContainers} possible containers; %{BASE10NUM:PossibleObjects} possible objects" }
+    }
+  }
+
+  if [type] == "swift" {
+    grok {
+      add_tag => ["swift", "object", "expirer", "OBJ_EXP_FINISH"]
+      remove_tag => ["_grokparsefailure"]
+      patterns_dir => ["/opt/logstash/patterns", "/opt/logstash/extra_patterns"]
+      match => { "message" => "OBJ_EXP_FINISH \A%{SYSLOGTIMESTAMP} %{HOSTNAME} %{WORD:ServiceType}-%{WORD:JobType}: Pass completed in %{NUMBER:CompletedSeconds}s; %{BASE10NUM:ObjectsExpired} objects expired" }
+    }
+  }
+
+
+################################
+# Object Reconstructor patterns
+################################
+#
+# EXAMPLE LOG ENTRIES
+#   #############
+# OBJ_RECONSTRUCTOR_START Oct 15 13:12:52 localhost.localdomain object-reconstructor: Starting object reconstruction pass.
+# OBJ_RECONSTRUCTOR_CHECK Oct 15 13:12:22 localhost.localdomain object-reconstructor: Nothing reconstructed for 0.000535011291504 seconds.
+# OBJ_RECONSTRUCTOR_FINISH Oct 15 13:12:52 localhost.localdomain object-reconstructor: Object reconstruction complete. (0.00 minutes)
+#   #############
+
+  if [type] == "swift" {
+    grok {
+      add_tag => ["swift", "object", "OBJ_RECONSTRUCTOR_START"]
+      remove_tag => ["_grokparsefailure"]
+      patterns_dir => ["/opt/logstash/patterns", "/opt/logstash/extra_patterns"]
+      match => { "message" => "%{SYSLOGTIMESTAMP} %{HOSTNAME} %{WORD:ServiceType}-%{WORD:JobType}: Starting object reconstruction pass." }
+    }
+  }
+
+  if [type] == "swift" {
+    grok {
+      add_tag => ["swift", "object", "OBJ_RECONSTRUCTOR_CHECK"]
+      remove_tag => ["_grokparsefailure"]
+      patterns_dir => ["/opt/logstash/patterns", "/opt/logstash/extra_patterns"]
+      match => { "message" => "%{SYSLOGTIMESTAMP} %{HOSTNAME} %{WORD:ServiceType}-%{WORD:JobType}: Nothing reconstructed for %{NUMBER:Seconds} seconds." }
+    }
+  }
+
+  if [type] == "swift" {
+    grok {
+      add_tag => ["swift", "object", "OBJ_RECONSTRUCTOR_FINISH"]
+      remove_tag => ["_grokparsefailure"]
+      patterns_dir => ["/opt/logstash/patterns", "/opt/logstash/extra_patterns"]
+      match => { "message" => "%{SYSLOGTIMESTAMP} %{HOSTNAME} %{WORD:ServiceType}-%{WORD:JobType}: Object reconstruction complete. \(%{NUMBER:CompletedMinutes} minutes\)" }
+    }
+  }
+
+
+################################
+# Object Auditor patterns
+################################
+#
+# EXAMPLE LOG ENTRIES
+#   #############
+# OBJ_AUD_START Oct 15 13:16:20 localhost.localdomain object-auditor: Begin object audit "forever" mode (ZBF)
+# OBJ_AUD_PROGRESS Oct 15 13:16:20 localhost.localdomain object-auditor: Object audit (ZBF). Since Thu Oct 15 20:16:20 2015: Locally: 1 passed, 0 quarantined, 0 errors files/sec: 248.76 , bytes/sec: 0.00, Total time: 0.00, Auditing time: 0.00, Rate: 0.00
+# OBJ_AUD_FINISH Oct 15 13:18:52 localhost.localdomain object-auditor: Object audit (ZBF) "forever" mode completed: 151.23s. Total quarantined: 0, Total errors: 0, Total files/sec: 50.01, Total bytes/sec: 0.00, Auditing time: 149.82, Rate: 0.99
+#   #############
+
+  if [type] == "swift" {
+    grok {
+      add_tag => ["swift", "object", "OBJ_AUD_START"]
+      remove_tag => ["_grokparsefailure"]
+      patterns_dir => ["/opt/logstash/patterns", "/opt/logstash/extra_patterns"]
+      match => { "message" => "%{SYSLOGTIMESTAMP} %{HOSTNAME} %{WORD:ServiceType}-%{WORD:JobType}: Begin object audit \"%{WORD:AuditMode}\" mode \(%{WORD:AuditType}\)" }
+    }
+  }
+
+  if [type] == "swift" {
+    grok {
+      add_tag => ["swift", "object", "OBJ_AUD_PROGRESS"]
+      remove_tag => ["_grokparsefailure"]
+      patterns_dir => ["/opt/logstash/patterns", "/opt/logstash/extra_patterns"]
+      match => { "message" => "%{SYSLOGTIMESTAMP} %{HOSTNAME} %{WORD:ServiceType}-%{WORD:JobType}: Object audit \(%{WORD:ModeFlag}\). Since %{DAY} %{SYSLOGTIMESTAMP}: Locally: %{BASE10NUM:NumberPassed} passed, %{BASE10NUM:NumberQuarantined} quarantined, %{BASE10NUM:NumberErrors} errors files/sec: %{NUMBER:FilesPerSecond} , bytes/sec: %{NUMBER:BytesPerSecond}, Auditing Time: %{NUMBER:TotalAuditTime}, Rate: {NUMBER:AuditRate}" }
+    }
+  }
+
+  if [type] == "swift" {
+    grok {
+      add_tag => ["swift", "object", "OBJ_AUD_FINISH"]
+      remove_tag => ["_grokparsefailure"]
+      patterns_dir => ["/opt/logstash/patterns", "/opt/logstash/extra_patterns"]
+      match => { "message" => "%{SYSLOGTIMESTAMP} %{HOSTNAME} %{WORD:ServiceType}-%{WORD:JobType}: Object audit \(%{WORD:ModeFlag}\) "%{WORD:AuditMode}" mode completed: %{NUMBER:CompletedSeconds}s. Total quarantined: %{BASE10NUM:TotalQuarantined}, Total errors: %{BASE10NUM:TotalErrors}, Total files/sec: %{NUMBER:TotalFilesPerSec}, Total bytes/sec: %{NUMBER:TotalBytesPerSec}, Auditing time: %{NUMBER:TotalAuditingTime}, Rate: %{NUMBER:TotalAuditRate}" }
+    }
+  }
+
+
+################################
+# Object Replicator patterns
+################################
+#
+# EXAMPLE LOG ENTRIES
+#   #############
+# OBJ_REP_START Oct 15 13:11:48 localhost.localdomain object-replicator: Starting object replication pass.
+# OBJ_REP_PROGRESS Oct 15 13:12:58 localhost.localdomain object-replicator: 7401/7401 (100.00%) partitions replicated in 69.92s (105.85/sec, 0s remaining)
+# OBJ_REP_FINISH Oct 15 13:12:58 localhost.localdomain object-replicator: Object replication complete. (1.17 minutes)
+#   #############
+
+  if [type] == "swift" {
+    grok {
+      add_tag => ["swift", "object", "OBJ_REP_START"]
+      remove_tag => ["_grokparsefailure"]
+      patterns_dir => ["/opt/logstash/patterns", "/opt/logstash/extra_patterns"]
+      match => { "message" => "%{SYSLOGTIMESTAMP} %{HOSTNAME} %{WORD:ServiceType}-%{WORD:JobType}: Starting object replication pass." }
+    }
+  }
+
+  if [type] == "swift" {
+    grok {
+      add_tag => ["swift", "object", "OBJ_REP_PROGRESS"]
+      remove_tag => ["_grokparsefailure"]
+      patterns_dir => ["/opt/logstash/patterns", "/opt/logstash/extra_patterns"]
+      match => { "message" => "%{SYSLOGTIMESTAMP} %{HOSTNAME} %{WORD:ServiceType}-%{WORD:JobType}: %{BASE10NUM:CurrentRecords}/%{BASE10NUM:TotalRecords} \(%{NUMBER:PercentComplete}\%\) partitions replicated in %{NUMBER:SecondsRunning}s \(%{NUMBER:RecordsPerSecond}/sec, %{NUMBER:SecondsRemaining}s remaining\)" }
+    }
+  }
+
+  if [type] == "swift" {
+    grok {
+      add_tag => ["swift", "object", "OBJ_REP_FINISH"]
+      remove_tag => ["_grokparsefailure"]
+      patterns_dir => ["/opt/logstash/patterns", "/opt/logstash/extra_patterns"]
+      match => { "message" => "%{SYSLOGTIMESTAMP} %{HOSTNAME} %{WORD:ServiceType}-%{WORD:JobType}: Object replication complete. \(%{NUMBER:TotalTimeMinutes} minutes\)" }
+    }
+  }
